@@ -34,6 +34,7 @@
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
+#include "aux_sem.h"
 
 /* Freescale includes. */
 #include "fsl_device_registers.h"
@@ -56,6 +57,7 @@ SemaphoreHandle_t xSemaphore_consumer;
 static void producer_task(void *pvParameters);
 static void consumer_task(void *pvParameters);
 
+extern BufferItem_t BufferItemList[BUFFITEMNUMBER];
 /*******************************************************************************
  * Code
  ******************************************************************************/
