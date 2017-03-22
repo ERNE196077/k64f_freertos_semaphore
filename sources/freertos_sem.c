@@ -34,7 +34,6 @@
 #include "queue.h"
 #include "timers.h"
 #include "semphr.h"
-#include "aux_sem.h"
 
 /* Freescale includes. */
 #include "fsl_device_registers.h"
@@ -43,6 +42,9 @@
 
 #include "pin_mux.h"
 #include "clock_config.h"
+#include "aux_sem.h"
+
+
 /*******************************************************************************
  * Definitions
  ******************************************************************************/

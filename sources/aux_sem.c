@@ -1,16 +1,21 @@
+
+
 #include "aux_sem.h"
+
 
 
 BufferItem_t BufferItemList[BUFFITEMNUMBER];
 
-int c;
-for ( c = 0; c < BUFFITEMNUMBER - 1; c++)
-{
-	BufferItemList[c].id = c;
-	BufferItemList[c].value = 0;
-	BufferItemList[c].next = (struct _BufferItem_t_ *)&BufferItemList[c+1];
+void BufferItemListInit(void){
+	int j;
+	for( j = 0 ; j < BUFFITEMNUMBER - 1 ; j++ ){
+		BufferItemList[j].id = j;
+		BufferItemList[j].value = 0;
+		BufferItemList[j].semphr = xSemaphoreCreateBinary();
+		BufferItemList[j].next = &BufferItemList[j+1];
+	}
+	BufferItemList[BUFFITEMNUMBER - 1].id = BUFFITEMNUMBER - 1;
+	BufferItemList[BUFFITEMNUMBER - 1].value = 0;
+	BufferItemList[BUFFITEMNUMBER - 1].semphr = xSemaphoreCreateBinary();
+	BufferItemList[BUFFITEMNUMBER - 1].next = &BufferItemList[0];
 }
-
-BufferItemList[BUFFITEMNUMBER-1].id = c;
-BufferItemList[BUFFITEMNUMBER-1].value = 0;
-BufferItemList[BUFFITEMNUMBER-1].next = &BufferItemList[0];
