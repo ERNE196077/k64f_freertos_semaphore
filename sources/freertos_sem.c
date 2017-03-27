@@ -62,7 +62,12 @@ SemaphoreHandle_t *xSemaphore_consumer;
 static void producer_task(void *pvParameters);
 static void consumer_task(void *pvParameters);
 
+
+
 extern BufferItem_t BufferItemList[BUFFITEMNUMBER];
+
+BufferItem_t *producer_item = (BufferItem_t *)&(BufferItemList[PRODUCER_START]);
+BufferItem_t *consumer_item = (BufferItem_t *)&(BufferItemList[CONSUMER_START]);
 /*******************************************************************************
  * Code
  ******************************************************************************/
@@ -80,6 +85,7 @@ int main(void)
     xTaskCreate(producer_task, "PRODUCER_TASK", configMINIMAL_STACK_SIZE, NULL, TASK_PRIO, NULL);
     xTaskCreate(consumer_task, "CONSUMER_TASK", configMINIMAL_STACK_SIZE, NULL, TASK_PRIO, NULL);
 
+
     PRINTF("TASKS created.\r\n");
     /* Start scheduling. */
     vTaskStartScheduler();
@@ -93,10 +99,13 @@ int main(void)
 static void producer_task(void *pvParameters)
 {
 
-	BufferItem_t *producer_item = (BufferItem_t *)&(BufferItemList[PRODUCER_START]);
+
+
+
 
     while (1)
     {
+
 
 
         if (xSemaphoreTake(producer_item->semphr, portMAX_DELAY) == pdTRUE)
@@ -107,10 +116,10 @@ static void producer_task(void *pvParameters)
         		int p = 0;
         		while(p < PRODUCER_DELAY )
         			p++;
-        	}else{
+
         		SemaphoreHandle_t *paux_item = &(producer_item->semphr);
         		producer_item = (BufferItem_t *)producer_item->next;
-        		PRINTF("Producer RELEASED Item: %d\r\n",producer_item	->id);
+        		PRINTF("Producer RELEASED Item: %d\r\n",producer_item->id);
         		xSemaphoreGive(*paux_item);
 
         	}
@@ -121,6 +130,7 @@ static void producer_task(void *pvParameters)
         }
 
     }
+	//PRINTF("Task Producer");
 }
 
 /*!
@@ -128,7 +138,7 @@ static void producer_task(void *pvParameters)
  */
 static void consumer_task(void *pvParameters)
 {
-	BufferItem_t *consumer_item = (BufferItem_t *)&(BufferItemList[CONSUMER_START]);
+
 
     while (1)
     {
@@ -140,7 +150,7 @@ static void consumer_task(void *pvParameters)
         		int c = 0;
         		while(c < CONSUMER_DELAY )
         			c++;
-        	}else{
+
         		SemaphoreHandle_t *caux_item = &(consumer_item->semphr);
         		consumer_item = (BufferItem_t *)consumer_item->next;
         		PRINTF("Consumer RELEASED Item: %d\r\n",consumer_item->id);
@@ -151,4 +161,6 @@ static void consumer_task(void *pvParameters)
         	PRINTF("Consumer Waiting for Item: %d\r\n",consumer_item->id);
         }
     }
+
+	//PRINTF("Task Consumer");
 }

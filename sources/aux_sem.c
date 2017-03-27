@@ -13,9 +13,11 @@ void BufferItemListInit(void){
 		BufferItemList[j].value = 0;
 		BufferItemList[j].semphr = xSemaphoreCreateBinary();
 		BufferItemList[j].next = &BufferItemList[j+1];
+		xSemaphoreGive(BufferItemList[j].semphr);
 	}
 	BufferItemList[BUFFITEMNUMBER - 1].id = BUFFITEMNUMBER - 1;
 	BufferItemList[BUFFITEMNUMBER - 1].value = 0;
 	BufferItemList[BUFFITEMNUMBER - 1].semphr = xSemaphoreCreateBinary();
 	BufferItemList[BUFFITEMNUMBER - 1].next = &BufferItemList[0];
+	xSemaphoreGive(BufferItemList[BUFFITEMNUMBER - 1].semphr);
 }
