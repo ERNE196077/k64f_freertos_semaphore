@@ -48,11 +48,14 @@
 /*******************************************************************************
  * Definitions
  ******************************************************************************/
-
+#define PRODUCER_DELAY	500
+#define CONSUMER_DELAY 	200
+#define PRODUCER_START	4
+#define CONSUMER_START	0
 #define TASK_PRIO (configMAX_PRIORITIES - 1)
 #define CONSUMER_LINE_SIZE 3
-SemaphoreHandle_t xSemaphore_producer;
-SemaphoreHandle_t xSemaphore_consumer;
+SemaphoreHandle_t *xSemaphore_producer;
+SemaphoreHandle_t *xSemaphore_consumer;
 /*******************************************************************************
  * Prototypes
  ******************************************************************************/
@@ -72,8 +75,12 @@ int main(void)
     BOARD_InitPins();
     BOARD_BootClockRUN();
     BOARD_InitDebugConsole();
+
+    BufferItemListInit();
     xTaskCreate(producer_task, "PRODUCER_TASK", configMINIMAL_STACK_SIZE, NULL, TASK_PRIO, NULL);
-    PRINTF("Producer_task created.\r\n");
+    xTaskCreate(consumer_task, "CONSUMER_TASK", configMINIMAL_STACK_SIZE, NULL, TASK_PRIO, NULL);
+
+    PRINTF("TASKS created.\r\n");
     /* Start scheduling. */
     vTaskStartScheduler();
     for (;;)
@@ -85,41 +92,34 @@ int main(void)
  */
 static void producer_task(void *pvParameters)
 {
-    uint32_t i;
 
-    xSemaphore_producer = xSemaphoreCreateBinary();
-    if (xSemaphore_producer == NULL)
-    {
-        PRINTF("xSemaphore_producer creation failed.\r\n");
-        vTaskSuspend(NULL);
-    }
-
-    xSemaphore_consumer = xSemaphoreCreateBinary();
-    if (xSemaphore_consumer == NULL)
-    {
-        PRINTF("xSemaphore_consumer creation failed.\r\n");
-        vTaskSuspend(NULL);
-    }
-
-    for (i = 0; i < CONSUMER_LINE_SIZE; i++)
-    {
-        xTaskCreate(consumer_task, "CONSUMER_TASK", configMINIMAL_STACK_SIZE, (void *)i, TASK_PRIO, NULL);
-        PRINTF("Consumer_task %d created.\r\n", i);
-    }
+	BufferItem_t *producer_item = (BufferItem_t *)&(BufferItemList[PRODUCER_START]);
 
     while (1)
     {
-        /* Producer is ready to provide item. */
-        xSemaphoreGive(xSemaphore_consumer);
-        /* Producer is waiting when consumer will be ready to accept item. */
-        if (xSemaphoreTake(xSemaphore_producer, portMAX_DELAY) == pdTRUE)
+
+
+        if (xSemaphoreTake(producer_item->semphr, portMAX_DELAY) == pdTRUE)
         {
-            PRINTF("Producer released item.\r\n");
+        	if(producer_item->value == 0){
+        		producer_item->value = 1;
+        		PRINTF("Producer Took item: %d :: Value: %d\r\n", producer_item->id, producer_item->value);
+        		int p = 0;
+        		while(p < PRODUCER_DELAY )
+        			p++;
+        	}else{
+        		SemaphoreHandle_t *paux_item = &(producer_item->semphr);
+        		producer_item = (BufferItem_t *)producer_item->next;
+        		PRINTF("Producer RELEASED Item: %d\r\n",producer_item	->id);
+        		xSemaphoreGive(*paux_item);
+
+        	}
+
+
+        }else{
+        	PRINTF("Producer Waiting for item: %d\r\n",producer_item->id);
         }
-        else
-        {
-            PRINTF("Producer is waiting for customer.\r\n");
-        }
+
     }
 }
 
@@ -128,19 +128,27 @@ static void producer_task(void *pvParameters)
  */
 static void consumer_task(void *pvParameters)
 {
-    PRINTF("Consumer number: %d\r\n", pvParameters);
+	BufferItem_t *consumer_item = (BufferItem_t *)&(BufferItemList[CONSUMER_START]);
+
     while (1)
     {
-        /* Consumer is ready to accept. */
-        xSemaphoreGive(xSemaphore_producer);
-        /* Consumer is waiting when producer will be ready to produce item. */
-        if (xSemaphoreTake(xSemaphore_consumer, portMAX_DELAY) == pdTRUE)
+        if (xSemaphoreTake(consumer_item->semphr, portMAX_DELAY) == pdTRUE)
         {
-            PRINTF("Consumer %d accepted item.\r\n", pvParameters);
-        }
-        else
-        {
-            PRINTF("Consumer %d is waiting for producer.\r\n", pvParameters);
+        	if(consumer_item->value == 1){
+        		consumer_item->value = 0;
+        		PRINTF("Consumer Took item: %d :: Value: %d\r\n", consumer_item->id, consumer_item->value);
+        		int c = 0;
+        		while(c < CONSUMER_DELAY )
+        			c++;
+        	}else{
+        		SemaphoreHandle_t *caux_item = &(consumer_item->semphr);
+        		consumer_item = (BufferItem_t *)consumer_item->next;
+        		PRINTF("Consumer RELEASED Item: %d\r\n",consumer_item->id);
+        		xSemaphoreGive(*caux_item);
+
+        	}
+        }else{
+        	PRINTF("Consumer Waiting for Item: %d\r\n",consumer_item->id);
         }
     }
 }
